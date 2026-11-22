@@ -41,22 +41,46 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;m
 /* ---------- Escena 3D ---------- */
 .escena{position:fixed;inset:0 0 70px 0;display:flex;align-items:center;justify-content:center;perspective:2200px;perspective-origin:50% 40%}
 .flotar{animation:flotar 7s ease-in-out infinite;transform-style:preserve-3d}
-@keyframes flotar{50%{transform:translateY(-9px)}}
+@keyframes flotar{0%,100%{transform:translateY(-6px)}50%{transform:translateY(-22px)}}
 .inclinar{transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 .libro{position:relative;width:calc(var(--pw) * 2);height:var(--ph);transform-style:preserve-3d;
   transition:transform .55s cubic-bezier(.2,.7,.2,1)}
 .libro.una{width:var(--pw)}
 /* sombra bajo el libro */
-.sombra-suelo{position:absolute;left:8%;right:8%;bottom:-46px;height:40px;border-radius:50%;
-  background:radial-gradient(ellipse at center, rgba(70,45,25,.32), rgba(70,45,25,0) 70%);
-  filter:blur(6px);transform:translateZ(-40px);animation:sombra 7s ease-in-out infinite}
-@keyframes sombra{50%{transform:translateZ(-40px) scale(.94);opacity:.8}}
+/* sombra proyectada en el suelo: se queda abajo y se encoge cuando el libro sube */
+.sombra-suelo{position:absolute;left:50%;top:calc(50% + var(--ph) / 2 + 40px);width:calc(var(--pw) * 2 * .82);height:46px;
+  margin-left:calc(var(--pw) * -.82);border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse at center, rgba(62,38,20,.42) 0%, rgba(62,38,20,.18) 45%, rgba(62,38,20,0) 72%);
+  filter:blur(9px);animation:sombra 7s ease-in-out infinite;transition:width .55s,margin-left .55s}
+.escena.una .sombra-suelo{width:calc(var(--pw) * .9);margin-left:calc(var(--pw) * -.45)}
+.escena.cerrado .sombra-suelo{width:calc(var(--pw) * .9);margin-left:calc(var(--pw) * -.45)}
+@keyframes sombra{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.84);opacity:.62}}
+/* resplandor cálido detrás del libro: lo separa del fondo */
+.halo{position:absolute;left:50%;top:50%;width:calc(var(--pw) * 2.6);height:calc(var(--ph) * 1.25);transform:translate(-50%,-52%);
+  border-radius:50%;pointer-events:none;background:radial-gradient(ellipse at center, rgba(255,251,240,.85), rgba(255,251,240,0) 65%)}
+/* bloque de páginas (grosor del libro): canto inferior y cantos laterales */
+.bloque{position:absolute;top:0;width:var(--pw);height:var(--ph);transform-style:preserve-3d;pointer-events:none}
+.bloque.der{left:50%} .bloque.izq{left:0}
+.libro.una .bloque.der{left:0} .libro.una .bloque.izq{display:none}
+.pila{position:absolute;inset:0;background:var(--papel);border-radius:2px 5px 5px 2px}
+.bloque.izq .pila{border-radius:5px 2px 2px 5px}
+.canto{position:absolute;backface-visibility:visible;
+  background:repeating-linear-gradient(var(--dir,0deg), #efe5d2 0 1px, #d9ccb3 1px 2px, #f4ecdd 2px 3px)}
+.canto.inf{left:0;width:100%;top:100%;height:var(--g,20px);transform-origin:top;transform:rotateX(-90deg);
+  --dir:0deg;box-shadow:inset 0 -6px 10px rgba(80,55,30,.25)}
+.canto.lado{top:0;height:100%;width:var(--g,20px);--dir:90deg}
+.bloque.der .canto.lado{left:100%;transform-origin:left;transform:rotateY(90deg);box-shadow:inset -6px 0 10px rgba(80,55,30,.22)}
+.bloque.izq .canto.lado{right:100%;transform-origin:right;transform:rotateY(-90deg);box-shadow:inset 6px 0 10px rgba(80,55,30,.22)}
+.canto.sup{left:0;width:100%;bottom:100%;height:var(--g,20px);transform-origin:bottom;transform:rotateX(90deg);--dir:0deg}
 /* lomo y grosor */
 .lomo{position:absolute;left:calc(50% - 3px);top:-2px;bottom:-2px;width:6px;border-radius:3px;
-  background:linear-gradient(90deg,#8e6f4c,#c9ab82,#8e6f4c);transform:translateZ(-2px);box-shadow:0 0 18px rgba(60,40,20,.35)}
+  background:linear-gradient(90deg,#8e6f4c,#c9ab82,#8e6f4c);transform:translateZ(-1px);box-shadow:0 0 18px rgba(60,40,20,.35)}
 .libro.una .lomo{left:-3px}
-.cubierta{position:absolute;inset:-6px -8px;border-radius:6px 10px 10px 6px;transform:translateZ(-6px);
-  background:linear-gradient(135deg,#7f3424,#9c4630 45%,#7a3020);box-shadow:0 30px 60px -20px rgba(60,30,15,.55)}
+.cubierta{position:absolute;top:-7px;left:-10px;right:-10px;bottom:calc(-9px - var(--gmax,24px) * .9);border-radius:7px 12px 12px 7px;transform:translateZ(-30px);
+  background:linear-gradient(135deg,#7f3424,#9c4630 45%,#7a3020);
+  box-shadow:0 0 0 1px rgba(60,25,12,.35), 0 50px 90px -30px rgba(50,25,10,.55), 0 18px 30px -18px rgba(50,25,10,.45)}
+.cubierta::after{content:"";position:absolute;left:0;right:0;top:100%;height:5px;transform-origin:top;transform:rotateX(-90deg);
+  background:#6a2718;border-radius:0 0 4px 4px}
 .libro.una .cubierta{inset:-6px -8px -6px -4px}
 .libro.cerrado:not(.una) .cubierta{left:calc(50% - 3px)}
 .libro.final:not(.una) .cubierta{right:calc(50% - 3px)}
@@ -151,12 +175,15 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;m
 </div>
 
 <div class="escena" id="escena">
+  <div class="halo"></div>
+  <div class="sombra-suelo"></div>
   <div class="flotar">
     <div class="inclinar" id="inclinar">
       <div class="libro" id="libro" aria-live="polite">
         <div class="cubierta"></div>
+        <div class="bloque izq" id="bloqueIzq"><div class="pila"></div></div>
+        <div class="bloque der" id="bloqueDer"><div class="pila"></div></div>
         <div class="lomo"></div>
-        <div class="sombra-suelo"></div>
       </div>
     </div>
   </div>
@@ -341,7 +368,7 @@ const modoUna = () => window.innerWidth < 760 || window.innerWidth < window.inne
 function medir() {
   const una = modoUna();
   const vw = window.innerWidth, vh = window.innerHeight;
-  const altoMax = (vh - 150) * (una ? 0.92 : 0.9), anchoMax = vw * (una ? 0.9 : 0.86) / (una ? 1 : 2);
+  const altoMax = (vh - 190) * (una ? 0.9 : 0.88), anchoMax = vw * (una ? 0.9 : 0.86) / (una ? 1 : 2);
   let ph = Math.min(altoMax, anchoMax / 0.7), pw = ph * 0.7;
   document.documentElement.style.setProperty("--pw", pw + "px");
   document.documentElement.style.setProperty("--ph", ph + "px");
@@ -381,6 +408,34 @@ function colocar(j, ang) {
   const cerca = Math.abs(j - actual) <= 2 || (ang !== 0 && ang !== -180);
   h.style.visibility = cerca ? "visible" : "hidden";
 }
+function pilaSombras(g, lado) {
+  // capas de papel: cada 1.5 px una hoja, con leve desplazamiento hacia el canto exterior
+  const capas = [], tonos = ["#efe6d4", "#ddd0b8", "#f3ebdc", "#e4d8c1"];
+  const pasos = Math.round(g / 1.5);
+  for (let i = 1; i <= pasos; i++) {
+    const y = (i * 1.5).toFixed(1), x = (lado * i * 0.6).toFixed(1);
+    capas.push(`${x}px ${y}px 0 ${tonos[i % 4]}`);
+  }
+  if (pasos) capas.push(`${(lado * pasos * 0.6).toFixed(1)}px ${(pasos * 1.5 + 2).toFixed(1)}px 4px rgba(80,52,28,.35)`);
+  return capas.join(",") || "none";
+}
+function grosor() {
+  // grosor del cuerpo del libro, repartido entre lo leído (izq) y lo que falta (der)
+  const una = modoUna();
+  const pw = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--pw")) || 400;
+  const gmax = Math.max(14, Math.min(28, pw * 0.032 + HOJAS.length * 0.35));
+  const n = Math.max(1, HOJAS.length), leido = Math.min(1, actual / n);
+  const gIzq = una ? 0 : (actual > 0 ? Math.max(3, gmax * leido) : 0);
+  const gDer = actual < n ? Math.max(3, gmax * (1 - leido)) : 0;
+  libro.style.setProperty("--gmax", gmax.toFixed(1) + "px");
+  const bi = $("#bloqueIzq"), bd = $("#bloqueDer");
+  bi.firstElementChild.style.boxShadow = pilaSombras(gIzq, -1);
+  bd.firstElementChild.style.boxShadow = pilaSombras(gDer, 1);
+  bi.style.transform = "translateZ(-2px)"; bd.style.transform = "translateZ(-2px)";
+  bi.style.visibility = gIzq ? "visible" : "hidden"; bd.style.visibility = gDer ? "visible" : "hidden";
+  $("#escena").classList.toggle("una", una);
+  $("#escena").classList.toggle("cerrado", !una && (actual === 0 || actual >= HOJAS.length));
+}
 function encuadrar() {
   // libro cerrado (portada) o terminado: centrar la mitad visible
   const una = modoUna();
@@ -390,6 +445,7 @@ function encuadrar() {
   }
   libro.style.transform = `translateX(${dx}%)`;
   libro.classList.toggle("cerrado", actual === 0); libro.classList.toggle("final", actual >= HOJAS.length);
+  grosor();
   HOJAS.forEach((h, j) => { if (!(anim && anim.j === j)) colocar(j, j < actual ? -180 : 0); });
   const totalP = PAG.length;
   let etiqueta;
@@ -436,6 +492,7 @@ function encuadrarSinHojas() {
   if (!una) { if (actual === 0) dx = -25; else if (actual >= HOJAS.length) dx = 25; }
   libro.style.transform = `translateX(${dx}%)`;
   libro.classList.toggle("cerrado", actual === 0); libro.classList.toggle("final", actual >= HOJAS.length);
+  grosor();
 }
 
 /* Arrastre con ratón o dedo */
@@ -503,7 +560,7 @@ addEventListener("pointermove", (e) => {
 });
 (function bucle() {
   cur.x += (objetivo.x - cur.x) * 0.06; cur.y += (objetivo.y - cur.y) * 0.06;
-  inclinar.style.transform = `rotateX(${(8 - cur.y * 7).toFixed(2)}deg) rotateY(${(cur.x * 9).toFixed(2)}deg)`;
+  inclinar.style.transform = `rotateX(${(9 - cur.y * 7).toFixed(2)}deg) rotateY(${(cur.x * 10).toFixed(2)}deg)`;
   requestAnimationFrame(bucle);
 })();
 
