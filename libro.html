@@ -228,7 +228,7 @@ async function cargarLibro() {
   const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
   sb = createClient(CFG.SUPABASE_URL, CFG.SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
   const { data: ses } = await sb.auth.getSession();
-  if (!ses.session) { aviso("Para ver su libro, primero abra la app «Notas de Vida» en este teléfono."); return null; }
+  if (!ses.session) return libroMuestra("Vista previa · abra la app para ver su libro");
 
   const [{ data: cfg }, { data: caps }, { data: notas }] = await Promise.all([
     sb.from("lv_libro").select("clave,valor").in("clave", ["portada"]),
@@ -243,9 +243,8 @@ async function cargarLibro() {
     titulo: c.titulo,
     notas: (c.notas_orden || []).map((id) => porId[id]).filter(Boolean).map((n) => ({ texto: texto(n), audio: n.ruta_escucha })),
   })).filter((c) => c.notas.length);
-  let borrador = false;
+  if (!capitulos.length && !(notas || []).length) return libroMuestra("Vista previa · así se verá su libro");
   if (!capitulos.length && (notas || []).length) {
-    borrador = true;
     capitulos = [{ titulo: "Primeros recuerdos", notas: notas.map((n) => ({ texto: texto(n), audio: n.ruta_escucha })) }];
   }
   return {
@@ -257,10 +256,10 @@ async function cargarLibro() {
     capitulos,
   };
 }
-function libroMuestra() {
+function libroMuestra(subtitulo) {
   const p = (t) => ({ texto: t, audio: null });
   return {
-    titulo: "Notas de Vida", subtitulo: "Libro de muestra", autora: "Julieta Hernández", iniciales: "JH",
+    titulo: "Notas de Vida", subtitulo: subtitulo || "Libro de muestra", autora: "Julieta Hernández", iniciales: "JH",
     capitulos: [
       { titulo: "Cómo se leerá este libro", notas: [p(
 `Este es un texto de muestra. Sirve solo para ver cómo se acomodan las letras, los márgenes y el paso de las hojas; no es parte de las memorias.
@@ -599,7 +598,7 @@ function rehacer() {
   medir(); construir(); montar(pagAntes); modoPrevio = modoUna();
 }
 let rT; addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(rehacer, 180); });
-LIBRO = await cargarLibro().catch((e) => { aviso("No se pudo abrir el libro en este momento. Intente de nuevo en un rato."); console.error(e); return null; });
+LIBRO = await cargarLibro().catch((e) => { console.error(e); return libroMuestra("Vista previa · sin conexión por ahora"); });
 if (LIBRO) {
   if (!LIBRO.capitulos.length) LIBRO.capitulos = [];
   rehacer();
