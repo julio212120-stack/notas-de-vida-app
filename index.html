@@ -159,9 +159,14 @@ if (!DEMO) {
 }
 
 /* ---------- Voz: la app habla para confirmar ---------- */
+let vozDesbloqueada = false;
+function desbloquearVoz() {           // iOS: la primera locución debe ocurrir dentro del toque
+  if (vozDesbloqueada || !window.speechSynthesis) return;
+  try { const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); vozDesbloqueada = true; } catch {}
+}
 function decir(texto) {
   try {
-    speechSynthesis.cancel();
+    if (speechSynthesis.speaking) speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(texto);
     u.lang = "es-MX"; u.rate = 0.9;
     const v = speechSynthesis.getVoices().find(v => v.lang.startsWith("es-MX")) || speechSynthesis.getVoices().find(v => v.lang.startsWith("es"));
@@ -241,7 +246,12 @@ async function terminar() {
   decir("Listo. Su nota quedó guardada.");
   pintarCola(); sincronizar();
 }
-boton.addEventListener("click", () => grabadora && grabadora.state === "recording" ? detener() : empezar());
+boton.addEventListener("click", () => {
+  desbloquearVoz();
+  if (grabadora && grabadora.state === "recording") { decir("Guardando su nota."); detener(); }
+  else { decir("La escucho."); empezar(); }
+});
+document.addEventListener("touchend", desbloquearVoz, { once: true });
 
 /* ---------- Sincronización con la nube ---------- */
 let sincronizando = false;
