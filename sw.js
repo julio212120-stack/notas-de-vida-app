@@ -1,6 +1,6 @@
 // Service worker: la app abre y graba aunque no haya internet.
-const CACHE = "lv-estacion-v5";
-const ARCHIVOS = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icono.svg",
+const CACHE = "lv-estacion-v6";
+const ARCHIVOS = ["./", "./index.html", "./libro.html", "./config.js", "./manifest.webmanifest", "./icono.svg",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"];
 
 self.addEventListener("install", (e) => {

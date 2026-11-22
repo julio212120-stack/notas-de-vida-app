@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi libro · Notas de Vida</title>
+<meta name="theme-color" content="#E9DCC6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icono.svg">
+<script src="config.js"></script>
+<style>
+:root{
+  --fondo1:#F3EADB; --fondo2:#E4D3B8; --fondo3:#D2BB98;
+  --papel:#FBF6EC; --papel-b:#F4ECDC; --tinta:#2E2520; --tenue:#7A6A5D;
+  --bermellon:#B5432C; --salvia:#7E8F74; --oro:#B08D57;
+  --serif:"Iowan Old Style","Palatino Linotype","Palatino","Book Antiqua",Georgia,serif;
+  --sans:-apple-system,"Segoe UI",system-ui,sans-serif;
+  --pw:420px; --ph:600px;           /* tamaño de página (lo ajusta JS) */
+  --letra:20px;                     /* tamaño de texto (lo ajusta JS) */
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;color:var(--tinta);font-family:var(--serif)}
+body{
+  background:
+    radial-gradient(1200px 800px at 50% 38%, #FAF3E6 0%, var(--fondo1) 35%, var(--fondo2) 72%, var(--fondo3) 100%);
+  touch-action:none; user-select:none; -webkit-user-select:none;
+}
+/* papel japonés: textura sutil */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .36  0 0 0 0 .27  0 0 0 .09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");}
+/* montañas en tinta, muy tenues */
+.paisaje{position:fixed;left:0;right:0;bottom:0;height:34vh;pointer-events:none;opacity:.20}
+.paisaje svg{width:100%;height:100%}
+/* luz que respira */
+.luz{position:fixed;width:70vmax;height:70vmax;left:50%;top:42%;transform:translate(-50%,-50%);
+  border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle, rgba(255,250,238,.75) 0%, rgba(255,250,238,0) 60%);
+  animation:respirar 9s ease-in-out infinite}
+@keyframes respirar{50%{opacity:.55;transform:translate(-50%,-50%) scale(1.06)}}
+
+/* ---------- Escena 3D ---------- */
+.escena{position:fixed;inset:0 0 70px 0;display:flex;align-items:center;justify-content:center;perspective:2200px;perspective-origin:50% 40%}
+.flotar{animation:flotar 7s ease-in-out infinite;transform-style:preserve-3d}
+@keyframes flotar{50%{transform:translateY(-9px)}}
+.inclinar{transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.libro{position:relative;width:calc(var(--pw) * 2);height:var(--ph);transform-style:preserve-3d;
+  transition:transform .55s cubic-bezier(.2,.7,.2,1)}
+.libro.una{width:var(--pw)}
+/* sombra bajo el libro */
+.sombra-suelo{position:absolute;left:8%;right:8%;bottom:-46px;height:40px;border-radius:50%;
+  background:radial-gradient(ellipse at center, rgba(70,45,25,.32), rgba(70,45,25,0) 70%);
+  filter:blur(6px);transform:translateZ(-40px);animation:sombra 7s ease-in-out infinite}
+@keyframes sombra{50%{transform:translateZ(-40px) scale(.94);opacity:.8}}
+/* lomo y grosor */
+.lomo{position:absolute;left:calc(50% - 3px);top:-2px;bottom:-2px;width:6px;border-radius:3px;
+  background:linear-gradient(90deg,#8e6f4c,#c9ab82,#8e6f4c);transform:translateZ(-2px);box-shadow:0 0 18px rgba(60,40,20,.35)}
+.libro.una .lomo{left:-3px}
+.cubierta{position:absolute;inset:-6px -8px;border-radius:6px 10px 10px 6px;transform:translateZ(-6px);
+  background:linear-gradient(135deg,#7f3424,#9c4630 45%,#7a3020);box-shadow:0 30px 60px -20px rgba(60,30,15,.55)}
+.libro.una .cubierta{inset:-6px -8px -6px -4px}
+.libro.cerrado:not(.una) .cubierta{left:calc(50% - 3px)}
+.libro.final:not(.una) .cubierta{right:calc(50% - 3px)}
+.cubierta{transition:left .5s,right .5s}
+
+/* ---------- Hojas ---------- */
+.hoja{position:absolute;top:0;left:50%;width:var(--pw);height:var(--ph);transform-origin:left center;
+  transform-style:preserve-3d;will-change:transform}
+.libro.una .hoja{left:0}
+.cara{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;
+  background:var(--papel)}
+.cara.frente{border-radius:0 6px 6px 0;
+  background:linear-gradient(90deg, rgba(120,90,60,.10) 0, rgba(120,90,60,0) 6%), var(--papel)}
+.cara.reverso{transform:rotateY(180deg);border-radius:6px 0 0 6px;
+  background:linear-gradient(270deg, rgba(120,90,60,.12) 0, rgba(120,90,60,0) 7%), var(--papel)}
+.libro.una .cara.reverso{background:var(--papel-b)}
+/* sombreado dinámico mientras gira */
+.cara::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:var(--luzhoja,0);
+  background:linear-gradient(90deg, rgba(40,25,10,.28), rgba(40,25,10,0) 55%)}
+.cara.reverso::after{background:linear-gradient(270deg, rgba(40,25,10,.28), rgba(40,25,10,0) 55%)}
+
+/* ---------- Contenido de página ---------- */
+.pagina{position:absolute;inset:0;padding:calc(var(--ph) * .085) calc(var(--pw) * .11) calc(var(--ph) * .09);
+  display:flex;flex-direction:column;font-size:var(--letra);line-height:1.62}
+.cabeza{font:600 calc(var(--letra) * .62)/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--tenue);
+  text-align:center;opacity:.75;margin-bottom:calc(var(--letra) * 1.1);min-height:1em}
+.cuerpo{flex:1;overflow:hidden;hyphens:auto;-webkit-hyphens:auto;text-align:left}
+.cuerpo p{margin:0 0 .75em}
+.cuerpo p.sigue{text-indent:0}
+.folio{text-align:center;font:500 calc(var(--letra) * .7)/1 var(--sans);color:var(--tenue);opacity:.8;margin-top:calc(var(--letra) * .6)}
+/* portada */
+.portada{align-items:center;justify-content:center;text-align:center;
+  background:radial-gradient(circle at 50% 42%, #FFFBF2 0%, var(--papel) 60%)}
+.portada .enso{width:58%;margin-bottom:6%}
+.portada h1{font-weight:400;font-size:calc(var(--letra) * 2.05);letter-spacing:.04em;margin:0;color:#3a2a22}
+.portada .sub{font-size:calc(var(--letra) * .95);color:var(--tenue);margin-top:.6em;font-style:italic}
+.portada .autora{margin-top:12%;font:500 calc(var(--letra) * .78) var(--sans);letter-spacing:.24em;text-transform:uppercase;color:#5a463b}
+.sello{width:calc(var(--letra) * 2.1);height:calc(var(--letra) * 2.1);border-radius:6px;background:var(--bermellon);color:#FBEDE6;
+  display:flex;align-items:center;justify-content:center;font:600 calc(var(--letra) * .8) var(--serif);letter-spacing:.04em;margin-top:8%;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.18);transform:rotate(-3deg)}
+/* índice */
+.indice h2,.apertura h2{font-weight:400;text-align:center;letter-spacing:.06em;margin:0 0 1.1em;font-size:calc(var(--letra) * 1.35);color:#3a2a22}
+.indice ol{list-style:none;padding:0;margin:0}
+.indice li{display:flex;align-items:baseline;gap:.5em;padding:.42em 0;cursor:pointer;border-radius:6px}
+.indice li:hover{background:rgba(176,141,87,.12)}
+.indice li .t{flex:none;max-width:78%}
+.indice li .p{flex:1;border-bottom:1px dotted rgba(122,106,93,.5);transform:translateY(-.3em)}
+.indice li .n{flex:none;font:500 calc(var(--letra) * .8) var(--sans);color:var(--tenue)}
+/* apertura de capítulo */
+.apertura{justify-content:center;text-align:center}
+.apertura .num{font:600 calc(var(--letra) * .68) var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--oro);margin-bottom:1.2em}
+.apertura .rama{width:40%;margin:1.4em auto 0;opacity:.55}
+.apertura h2{font-size:calc(var(--letra) * 1.55);margin:0}
+/* página en blanco / contraportada */
+.vacia{align-items:center;justify-content:center;color:var(--tenue);font-style:italic;text-align:center}
+.contra{background:linear-gradient(160deg,#8f3c28,#7a3020);color:#F6E7DA;align-items:center;justify-content:center;text-align:center}
+/* botón escuchar */
+.oir{display:inline-flex;align-items:center;gap:.45em;margin:0 0 .9em;padding:.35em .9em .35em .7em;border-radius:999px;border:1px solid rgba(176,141,87,.55);
+  background:rgba(255,252,245,.8);color:#5a463b;font:600 calc(var(--letra) * .68) var(--sans);cursor:pointer}
+.oir svg{width:1.15em;height:1.15em}
+.oir.sonando{background:var(--salvia);color:#fff;border-color:var(--salvia)}
+
+/* ---------- Controles (discretos) ---------- */
+.barra{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  display:flex;align-items:center;gap:6px;padding:6px;border-radius:999px;background:rgba(251,246,236,.78);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 8px 30px rgba(70,45,25,.18);
+  font:600 15px var(--sans);color:#5a463b;transition:opacity .6s}
+.barra button{border:none;background:none;color:inherit;font:inherit;padding:10px 14px;border-radius:999px;cursor:pointer;min-width:46px}
+.barra button:hover{background:rgba(176,141,87,.15)}
+.barra .pos{min-width:92px;text-align:center;font-variant-numeric:tabular-nums}
+.quieta .barra{opacity:.25}
+.volver{position:fixed;left:calc(14px + env(safe-area-inset-left));top:calc(14px + env(safe-area-inset-top));
+  border:none;border-radius:999px;padding:10px 16px;background:rgba(251,246,236,.78);backdrop-filter:blur(10px);
+  font:600 15px var(--sans);color:#5a463b;cursor:pointer;box-shadow:0 6px 20px rgba(70,45,25,.14);transition:opacity .6s}
+.quieta .volver{opacity:.3}
+.aviso{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;
+  font:500 19px/1.5 var(--sans);color:#5a463b}
+.aviso[hidden]{display:none}
+.escena,.flotar,.inclinar,.libro,.hoja{pointer-events:none}
+.cara{pointer-events:auto}
+@media (max-width:760px){ .paisaje{height:18vh} }
+@media (prefers-reduced-motion: reduce){ .flotar,.luz,.sombra-suelo{animation:none} }
+</style>
+</head>
+<body>
+<div class="luz"></div>
+<div class="paisaje" aria-hidden="true">
+  <svg viewBox="0 0 1200 300" preserveAspectRatio="none">
+    <path d="M0 230 C120 190 180 150 260 170 C330 188 380 120 470 135 C560 150 600 200 690 185 C780 170 840 110 930 130 C1020 150 1090 200 1200 180 L1200 300 L0 300Z" fill="#8a7560"/>
+    <path d="M0 260 C140 235 230 215 330 232 C430 250 520 210 640 222 C760 234 860 262 980 245 C1080 232 1140 238 1200 244 L1200 300 L0 300Z" fill="#6f5c49" opacity=".8"/>
+  </svg>
+</div>
+
+<div class="escena" id="escena">
+  <div class="flotar">
+    <div class="inclinar" id="inclinar">
+      <div class="libro" id="libro" aria-live="polite">
+        <div class="cubierta"></div>
+        <div class="lomo"></div>
+        <div class="sombra-suelo"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="volver" id="volver" aria-label="Volver a la app">‹ Volver</button>
+<div class="barra" id="barra" role="toolbar" aria-label="Hojear">
+  <button id="ant" aria-label="Página anterior">‹</button>
+  <button id="ind" aria-label="Ir al índice">Índice</button>
+  <span class="pos" id="pos">—</span>
+  <button id="sig" aria-label="Página siguiente">›</button>
+</div>
+<div class="aviso" id="aviso" hidden></div>
+<audio id="voz" preload="none"></audio>
+
+<script type="module">
+/* =====================================================================
+   Notas de Vida · Visor «Mi libro»
+   - Contenido: Supabase (lv_libro: portada; lv_capitulos; lv_notas.texto_vigente)
+   - Si aún no hay capítulos: «Borrador» con las notas ya revisadas.
+   - ?muestra=1 → libro de muestra con texto de ejemplo (para ver el diseño).
+   ===================================================================== */
+const CFG = window.LV_CONFIG || {};
+const qs = new URLSearchParams(location.search);
+const MUESTRA = qs.has("muestra");
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const NUMS = ["uno","dos","tres","cuatro","cinco","seis","siete","ocho","nueve","diez","once","doce","trece","catorce","quince",
+  "dieciséis","diecisiete","dieciocho","diecinueve","veinte"];
+
+const ENSO = `<svg class="enso" viewBox="0 0 200 200" aria-hidden="true"><path d="M154 52c-20-22-58-28-86-12-30 17-42 54-28 84 13 29 48 44 79 35 30-9 50-38 46-68-2-14-9-26-20-34"
+  fill="none" stroke="#3b2c24" stroke-width="9" stroke-linecap="round" opacity=".82"/><path d="M146 57c-14-12-34-16-52-10" fill="none" stroke="#3b2c24" stroke-width="4" stroke-linecap="round" opacity=".35"/></svg>`;
+const RAMA = `<svg class="rama" viewBox="0 0 160 40" aria-hidden="true"><path d="M4 30 C40 22 70 20 104 14 C120 11 136 8 156 4" fill="none" stroke="#6b5a4c" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="58" cy="16" r="4" fill="#C88B7D"/><circle cx="66" cy="12" r="3.2" fill="#D9A396"/><circle cx="112" cy="9" r="3.6" fill="#C88B7D"/><circle cx="121" cy="13" r="2.8" fill="#D9A396"/><circle cx="140" cy="4" r="3" fill="#C88B7D"/></svg>`;
+const ICO_OIR = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>`;
+
+/* ---------------- 1. Obtener el contenido ---------------- */
+let sb = null;
+async function cargarLibro() {
+  if (MUESTRA) return libroMuestra();
+  if (!CFG.SUPABASE_URL) return libroMuestra();
+  const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+  sb = createClient(CFG.SUPABASE_URL, CFG.SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+  const { data: ses } = await sb.auth.getSession();
+  if (!ses.session) { aviso("Para ver su libro, primero abra la app «Notas de Vida» en este teléfono."); return null; }
+
+  const [{ data: cfg }, { data: caps }, { data: notas }] = await Promise.all([
+    sb.from("lv_libro").select("clave,valor").in("clave", ["portada"]),
+    sb.from("lv_capitulos").select("id,orden,titulo,notas_orden").order("orden"),
+    sb.from("lv_notas").select("id,grabada_en,estado,texto_vigente,texto_limpio,ruta_escucha,capitulo_id")
+      .eq("estado", "en_libro").order("grabada_en"),   // solo lo que la autora ya aprobó
+  ]);
+  const portada = (cfg || []).find((x) => x.clave === "portada")?.valor || {};
+  const porId = Object.fromEntries((notas || []).map((n) => [n.id, n]));
+  const texto = (n) => (n.texto_vigente || n.texto_limpio || "").trim();
+  let capitulos = (caps || []).map((c) => ({
+    titulo: c.titulo,
+    notas: (c.notas_orden || []).map((id) => porId[id]).filter(Boolean).map((n) => ({ texto: texto(n), audio: n.ruta_escucha })),
+  })).filter((c) => c.notas.length);
+  let borrador = false;
+  if (!capitulos.length && (notas || []).length) {
+    borrador = true;
+    capitulos = [{ titulo: "Primeros recuerdos", notas: notas.map((n) => ({ texto: texto(n), audio: n.ruta_escucha })) }];
+  }
+  return {
+    titulo: portada.titulo || "Notas de Vida",
+    subtitulo: portada.subtitulo || "Memorias",
+    autora: portada.autora || "Julieta Hernández",
+    iniciales: portada.iniciales || "JH",
+    dedicatoria: portada.dedicatoria || "",
+    capitulos,
+  };
+}
+function libroMuestra() {
+  const p = (t) => ({ texto: t, audio: null });
+  return {
+    titulo: "Notas de Vida", subtitulo: "Libro de muestra", autora: "Julieta Hernández", iniciales: "JH",
+    capitulos: [
+      { titulo: "Cómo se leerá este libro", notas: [p(
+`Este es un texto de muestra. Sirve solo para ver cómo se acomodan las letras, los márgenes y el paso de las hojas; no es parte de las memorias.
+
+Cuando las notas de voz estén revisadas y aprobadas, aparecerán aquí con las palabras de la autora, en el orden que ella elija. Cada capítulo comenzará en una página propia, con su título al centro y un pequeño adorno.
+
+Las letras son grandes y sencillas a propósito: el libro debe poder leerse sin esfuerzo, con calma, como se lee una carta de alguien querido.
+
+Para cambiar de hoja basta con tocar el borde de la página, deslizar el dedo, arrastrar con el ratón o usar las flechas del teclado. La hoja acompaña el movimiento y, al soltarla, termina de pasar por sí sola.`)] },
+      { titulo: "La voz de la autora", notas: [p(
+`En las páginas donde comienza un recuerdo aparecerá un botón para escuchar la grabación original. Así el libro se podrá leer y también oír, con la misma voz que lo contó.
+
+Este párrafo de muestra continúa para comprobar que el texto pasa con naturalidad de una página a la siguiente, sin cortar palabras ni dejar huecos. Los encabezados, en letra pequeña, recuerdan el capítulo en que uno se encuentra, y el número de página queda abajo, discreto.
+
+El diseño busca serenidad: colores de papel y madera, una luz suave que respira detrás del libro, montañas apenas dibujadas a lo lejos. Nada que distraiga de la historia.
+
+Al terminar el último capítulo, la contraportada cierra el libro.`)] },
+    ],
+  };
+}
+
+/* ---------------- 2. Construir páginas (paginación por medida) ---------------- */
+let PAG = [];        // [{tipo, html}]
+let PAGINA_CAP = []; // página de inicio de cada capítulo
+let LIBRO = null;
+const medidor = document.createElement("div");
+medidor.style.cssText = "position:absolute;left:-9999px;top:0;visibility:hidden";
+document.body.appendChild(medidor);
+
+function paginaHTML(clase, cabeza, cuerpo, folio) {
+  return `<div class="pagina ${clase || ""}">${cabeza !== undefined ? `<div class="cabeza">${esc(cabeza)}</div>` : ""}
+    <div class="cuerpo">${cuerpo}</div>${folio ? `<div class="folio">${folio}</div>` : ""}</div>`;
+}
+function construir() {
+  const L = LIBRO; PAG = []; PAGINA_CAP = [];
+  PAG.push({ tipo: "portada", html: `<div class="pagina portada">${ENSO}<h1>${esc(L.titulo)}</h1><div class="sub">${esc(L.subtitulo)}</div>
+    <div class="autora">${esc(L.autora)}</div><div class="sello">${esc(L.iniciales)}</div></div>` });
+  PAG.push({ tipo: "vacia", html: L.dedicatoria ? `<div class="pagina vacia"><div class="cuerpo" style="display:flex;align-items:center;justify-content:center">
+    <span>${esc(L.dedicatoria)}</span></div></div>` : `<div class="pagina vacia"></div>` });
+  const idxIndice = PAG.length;
+  PAG.push({ tipo: "indice", html: "" });                       // se llena al final
+
+  // Medidor con el mismo tamaño que una página
+  medidor.innerHTML = paginaHTML("", "x", "", "1");
+  const caja = medidor.firstElementChild;
+  caja.style.position = "relative"; caja.style.width = "var(--pw)"; caja.style.height = "var(--ph)";
+  const cuerpo = caja.querySelector(".cuerpo");
+
+  L.capitulos.forEach((cap, ci) => {
+    // la apertura de capítulo empieza en página derecha (impar visual) en modo doble
+    if (!modoUna() && PAG.length % 2 === 1) PAG.push({ tipo: "vacia", html: `<div class="pagina vacia"></div>` });
+    PAGINA_CAP[ci] = PAG.length;
+    PAG.push({ tipo: "apertura", html: `<div class="pagina apertura"><div class="num">Capítulo ${NUMS[ci] || ci + 1}</div>
+      <h2>${esc(cap.titulo)}</h2>${RAMA}</div>` });
+    // Párrafos con marcas de inicio de nota (botón escuchar)
+    const bloques = [];
+    cap.notas.forEach((n) => {
+      const parr = n.texto.split(/\n\s*\n|\n/).map((s) => s.trim()).filter(Boolean);
+      parr.forEach((t, i) => bloques.push({ t, audio: i === 0 ? n.audio : null }));
+    });
+    let actual = "";
+    const cerrar = () => { if (actual) { PAG.push({ tipo: "texto", cap: cap.titulo, cuerpo: actual }); actual = ""; } };
+    const cabe = (html) => { cuerpo.innerHTML = html; return cuerpo.scrollHeight <= cuerpo.clientHeight + 1; };
+    // Agrega un párrafo; si no cabe, lo parte por palabras entre páginas. El botón «Escuchar» va solo al inicio.
+    const agregar = (texto, boton) => {
+      let pal = texto.split(/\s+/), clase = "", pre = boton;
+      while (pal.length) {
+        const frag = (k) => pre + `<p class="${clase}">${esc(pal.slice(0, k).join(" "))}</p>`;
+        if (cabe(actual + frag(pal.length))) { actual += frag(pal.length); return; }
+        let lo = 0, hi = pal.length;
+        while (lo < hi) { const m = Math.ceil((lo + hi) / 2); if (cabe(actual + frag(m))) lo = m; else hi = m - 1; }
+        if (lo === 0) { if (actual) { cerrar(); continue; } lo = 1; }
+        actual += frag(lo); pal = pal.slice(lo); clase = "sigue"; pre = ""; cerrar();
+      }
+    };
+    for (const b of bloques) agregar(b.t, b.audio ? `<button class="oir" data-audio="${esc(b.audio)}">${ICO_OIR}Escuchar</button>` : "");
+    cerrar();
+  });
+
+  if (!L.capitulos.length) {
+    if (!modoUna() && PAG.length % 2 === 1) PAG.push({ tipo: "vacia", html: `<div class="pagina vacia"></div>` });
+    PAG.push({ tipo: "vacia", html: `<div class="pagina vacia"><div class="cuerpo" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1em;font-style:normal">
+      ${ENSO}<span style="font-style:italic;max-width:18em;line-height:1.6">Aquí aparecerán sus recuerdos en cuanto usted apruebe las primeras notas.</span></div></div>` });
+  }
+  // Contraportada (en página izquierda al final en modo doble)
+  if (!modoUna() && PAG.length % 2 === 0) PAG.push({ tipo: "vacia", html: `<div class="pagina vacia"></div>` });
+  PAG.push({ tipo: "contra", html: `<div class="pagina contra"><div>${esc(LIBRO.titulo)}<br><small style="opacity:.75">${esc(LIBRO.autora)}</small></div></div>` });
+
+  // Folios y encabezados de texto
+  PAG.forEach((p, i) => { if (p.tipo === "texto") p.html = paginaHTML("", p.cap, p.cuerpo, String(i + 1)); });
+  // Índice
+  const items = LIBRO.capitulos.map((c, i) => `<li data-ir="${PAGINA_CAP[i]}"><span class="t">${esc(c.titulo)}</span><span class="p"></span><span class="n">${PAGINA_CAP[i] + 1}</span></li>`).join("");
+  PAG[idxIndice].html = `<div class="pagina indice"><h2>Índice</h2><div class="cuerpo"><ol>${items ||
+    `<li style="cursor:default;color:var(--tenue);font-style:italic">Los capítulos aparecerán aquí.</li>`}</ol></div></div>`;
+  medidor.innerHTML = "";
+}
+
+/* ---------------- 3. Hojas 3D y hojeo ---------------- */
+const libro = $("#libro");
+let HOJAS = [];      // elementos .hoja
+let actual = 0;      // número de hojas ya volteadas
+let anim = null;
+const modoUna = () => window.innerWidth < 760 || window.innerWidth < window.innerHeight * 0.95;
+
+function medir() {
+  const una = modoUna();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const altoMax = (vh - 150) * (una ? 0.92 : 0.9), anchoMax = vw * (una ? 0.9 : 0.86) / (una ? 1 : 2);
+  let ph = Math.min(altoMax, anchoMax / 0.7), pw = ph * 0.7;
+  document.documentElement.style.setProperty("--pw", pw + "px");
+  document.documentElement.style.setProperty("--ph", ph + "px");
+  // letra grande y legible: ~1/27 del alto de página, mínimo 18 px
+  document.documentElement.style.setProperty("--letra", Math.max(18, Math.min(24, ph / 27)) + "px");
+  libro.classList.toggle("una", una);
+}
+
+function montar(paginaObjetivo = 0) {
+  HOJAS.forEach((h) => h.remove()); HOJAS = [];
+  const una = modoUna();
+  const n = una ? PAG.length : Math.ceil(PAG.length / 2);
+  for (let j = 0; j < n; j++) {
+    const h = document.createElement("div"); h.className = "hoja";
+    const fr = una ? PAG[j] : PAG[2 * j], rv = una ? null : PAG[2 * j + 1];
+    h.innerHTML = `<div class="cara frente">${fr ? fr.html : ""}</div><div class="cara reverso">${rv ? rv.html : ""}</div>`;
+    libro.appendChild(h); HOJAS.push(h);
+  }
+  actual = una ? Math.min(paginaObjetivo, n - 1) : Math.min(Math.ceil(paginaObjetivo / 2), n);
+  if (una) actual = Math.max(0, Math.min(n - 1, paginaObjetivo));
+  HOJAS.forEach((h, j) => colocar(j, j < actual ? -180 : 0));
+  encuadrar();
+}
+function colocar(j, ang) {
+  const h = HOJAS[j]; if (!h) return;
+  const una = modoUna();
+  h.style.transform = `rotateY(${ang}deg)`;
+  const volteada = ang <= -90;
+  const n = HOJAS.length;
+  h.style.zIndex = ang !== 0 && ang !== -180 ? n + 2 : (volteada ? j + 1 : n - j);
+  // en modo una página, la hoja volteada se desvanece (no hay página izquierda)
+  if (una) h.style.opacity = ang <= -175 ? 0 : (ang < -110 ? (180 + ang) / 70 : 1);
+  else h.style.opacity = 1;
+  const luz = Math.sin(Math.abs(ang) * Math.PI / 180);
+  h.style.setProperty("--luzhoja", (luz * 0.9).toFixed(3));
+  // rendimiento: ocultar hojas lejanas
+  const cerca = Math.abs(j - actual) <= 2 || (ang !== 0 && ang !== -180);
+  h.style.visibility = cerca ? "visible" : "hidden";
+}
+function encuadrar() {
+  // libro cerrado (portada) o terminado: centrar la mitad visible
+  const una = modoUna();
+  let dx = 0;
+  if (!una) {
+    if (actual === 0) dx = -25; else if (actual >= HOJAS.length) dx = 25;
+  }
+  libro.style.transform = `translateX(${dx}%)`;
+  libro.classList.toggle("cerrado", actual === 0); libro.classList.toggle("final", actual >= HOJAS.length);
+  HOJAS.forEach((h, j) => { if (!(anim && anim.j === j)) colocar(j, j < actual ? -180 : 0); });
+  const totalP = PAG.length;
+  let etiqueta;
+  if (actual === 0) etiqueta = "Portada";
+  else if (una) etiqueta = `${actual + 1} / ${totalP}`;
+  else if (actual >= HOJAS.length) etiqueta = "Contraportada";
+  else etiqueta = `${actual * 2}–${actual * 2 + 1} / ${totalP}`;
+  $("#pos").textContent = etiqueta;
+  vincularPagina();
+}
+
+function animar(j, desde, hasta, durMs, alTerminar) {
+  cancelAnimationFrame(anim?.raf);
+  const t0 = performance.now();
+  anim = { j };
+  const paso = (t) => {
+    const k = Math.min(1, (t - t0) / durMs);
+    const e = 1 - Math.pow(1 - k, 3);   // suave pero ágil
+    colocar(j, desde + (hasta - desde) * e);
+    if (k < 1) anim.raf = requestAnimationFrame(paso);
+    else { anim = null; alTerminar && alTerminar(); }
+  };
+  anim.raf = requestAnimationFrame(paso);
+}
+const DUR = matchMedia("(prefers-reduced-motion: reduce)").matches ? 160 : 520;
+const limite = () => modoUna() ? HOJAS.length - 1 : HOJAS.length;
+function siguiente() { if (anim || actual >= limite()) return; const j = actual; actual++; animar(j, 0, -180, DUR, encuadrar); encuadrarSinHojas(); }
+function anterior() { if (anim || actual <= 0) return; actual--; const j = actual; animar(j, -180, 0, DUR, encuadrar); encuadrarSinHojas(); }
+function irA(pagina) {
+  const una = modoUna();
+  const destino = Math.max(0, Math.min(limite(), una ? pagina : Math.ceil(pagina / 2)));
+  if (destino === actual) return;
+  const adelante = destino > actual;
+  const pasos = Math.abs(destino - actual);
+  // hojeo rápido: varias hojas seguidas
+  let i = 0;
+  const uno = () => { if (i++ >= pasos) return; (adelante ? siguienteRapido : anteriorRapido)(uno); };
+  uno();
+}
+function siguienteRapido(cb) { const j = actual; actual++; animar(j, 0, -180, 170, () => { encuadrar(); cb(); }); encuadrarSinHojas(); }
+function anteriorRapido(cb) { actual--; const j = actual; animar(j, -180, 0, 170, () => { encuadrar(); cb(); }); encuadrarSinHojas(); }
+function encuadrarSinHojas() {
+  const una = modoUna(); let dx = 0;
+  if (!una) { if (actual === 0) dx = -25; else if (actual >= HOJAS.length) dx = 25; }
+  libro.style.transform = `translateX(${dx}%)`;
+  libro.classList.toggle("cerrado", actual === 0); libro.classList.toggle("final", actual >= HOJAS.length);
+}
+
+/* Arrastre con ratón o dedo */
+let drag = null;
+addEventListener("pointerdown", (e) => {
+  if (anim || e.target.closest(".oir,[data-ir],.barra,.volver")) return;
+  const r = libro.getBoundingClientRect();
+  if (e.clientX < r.left - 30 || e.clientX > r.right + 30 || e.clientY < r.top - 30 || e.clientY > r.bottom + 30) return;
+  const una = modoUna();
+  const mitad = una ? r.left + r.width * 0.5 : r.left + r.width / 2;
+  const adelante = e.clientX >= mitad;
+  if (adelante && actual >= limite()) return;
+  if (!adelante && actual <= 0) return;
+  const j = adelante ? actual : actual - 1;
+  drag = { j, adelante, x0: e.clientX, t0: performance.now(), ancho: una ? r.width : r.width / 2, ang: adelante ? 0 : -180, movio: false };
+});
+addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x0;
+  if (Math.abs(dx) > 6) drag.movio = true;
+  if (!drag.movio) return;
+  let p = drag.adelante ? Math.min(1, Math.max(0, -dx / drag.ancho)) : Math.min(1, Math.max(0, dx / drag.ancho));
+  drag.ang = drag.adelante ? -180 * p : -180 + 180 * p;
+  colocar(drag.j, drag.ang);
+});
+const soltar = (e) => {
+  if (!drag) return;
+  const d = drag; drag = null;
+  if (!d.movio) { d.adelante ? siguiente() : anterior(); return; }
+  const dt = performance.now() - d.t0, dx = e.clientX - d.x0, vel = Math.abs(dx) / Math.max(1, dt);
+  const p = d.adelante ? -d.ang / 180 : (180 + d.ang) / 180;
+  const completar = p > 0.33 || vel > 0.5;
+  const fin = d.adelante ? (completar ? -180 : 0) : (completar ? 0 : -180);
+  const resto = Math.abs(fin - d.ang) / 180;
+  if (completar) actual += d.adelante ? 1 : -1;
+  encuadrarSinHojas();
+  animar(d.j, d.ang, fin, Math.max(140, DUR * resto), encuadrar);
+};
+addEventListener("pointerup", soltar);
+addEventListener("pointercancel", soltar);
+
+/* Teclado */
+addEventListener("keydown", (e) => {
+  if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); siguiente(); }
+  else if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); anterior(); }
+  else if (e.key === "Home") irA(0);
+  else if (e.key === "End") irA(PAG.length);
+  else if (e.key === "Escape") volver();
+});
+/* Rueda / panel táctil: una hoja por gesto */
+let ruedaLibre = true;
+addEventListener("wheel", (e) => {
+  if (!ruedaLibre || Math.abs(e.deltaY) + Math.abs(e.deltaX) < 12) return;
+  ruedaLibre = false; setTimeout(() => (ruedaLibre = true), 420);
+  (e.deltaY + e.deltaX > 0) ? siguiente() : anterior();
+}, { passive: true });
+
+/* Inclinación suave siguiendo el ratón (sensación de libro flotante) */
+const inclinar = $("#inclinar");
+let objetivo = { x: 0, y: 0 }, cur = { x: 0, y: 0 };
+addEventListener("pointermove", (e) => {
+  if (e.pointerType !== "mouse") return;
+  objetivo.x = (e.clientX / innerWidth - 0.5); objetivo.y = (e.clientY / innerHeight - 0.5);
+  despertar();
+});
+(function bucle() {
+  cur.x += (objetivo.x - cur.x) * 0.06; cur.y += (objetivo.y - cur.y) * 0.06;
+  inclinar.style.transform = `rotateX(${(8 - cur.y * 7).toFixed(2)}deg) rotateY(${(cur.x * 9).toFixed(2)}deg)`;
+  requestAnimationFrame(bucle);
+})();
+
+/* Controles visibles solo cuando hace falta */
+let quietoT;
+function despertar() { document.body.classList.remove("quieta"); clearTimeout(quietoT); quietoT = setTimeout(() => document.body.classList.add("quieta"), 3200); }
+addEventListener("pointerdown", despertar); despertar();
+$("#sig").onclick = siguiente; $("#ant").onclick = anterior;
+$("#ind").onclick = () => irA(2);
+function volver() { location.href = "./index.html"; }
+$("#volver").onclick = volver;
+
+/* Índice y audio dentro de las páginas */
+function vincularPagina() {
+  libro.querySelectorAll("[data-ir]").forEach((li) => li.onclick = (e) => { e.stopPropagation(); irA(+li.dataset.ir); });
+  libro.querySelectorAll(".oir").forEach((b) => b.onclick = (e) => { e.stopPropagation(); escuchar(b); });
+}
+const voz = $("#voz");
+async function escuchar(b) {
+  if (b.classList.contains("sonando")) { voz.pause(); return; }
+  libro.querySelectorAll(".oir.sonando").forEach((x) => x.classList.remove("sonando"));
+  if (!sb) return;
+  const { data } = await sb.storage.from("lv_audio_libro").createSignedUrl(b.dataset.audio, 3600);
+  if (!data) return;
+  voz.src = data.signedUrl; b.classList.add("sonando");
+  voz.onended = voz.onpause = () => b.classList.remove("sonando");
+  voz.play().catch(() => b.classList.remove("sonando"));
+}
+
+function aviso(t) { const a = $("#aviso"); a.textContent = t; a.hidden = false; }
+
+/* ---------------- 4. Arranque y reacomodo ---------------- */
+let modoPrevio = null;
+function rehacer() {
+  const pagAntes = modoPrevio === null ? 0 : (modoPrevio ? actual : actual * 2);
+  medir(); construir(); montar(pagAntes); modoPrevio = modoUna();
+}
+let rT; addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(rehacer, 180); });
+LIBRO = await cargarLibro().catch((e) => { aviso("No se pudo abrir el libro en este momento. Intente de nuevo en un rato."); console.error(e); return null; });
+if (LIBRO) {
+  if (!LIBRO.capitulos.length) LIBRO.capitulos = [];
+  rehacer();
+}
+</script>
+</body>
+</html>
