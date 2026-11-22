@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Notas de Vida</title>
+<meta name="theme-color" content="#7A2E1F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Notas de Vida">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icono.svg">
+<script src="config.js"></script>
+<style>
+  :root{
+    --papel:#F6F1E7; --papel2:#EFE6D4; --tinta:#2B211C; --tenue:#6B5B50;
+    --vino:#7A2E1F; --terracota:#C8553D; --verde:#2F6B4F; --ambar:#B7791F;
+    --radio:22px; --sombra:0 6px 24px rgba(60,35,20,.14);
+    font-size:21px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--papel);color:var(--tinta);
+    font-family:"Iowan Old Style","Palatino","Georgia",serif;}
+  body{display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+  header{padding:18px 22px 6px}
+  header h1{margin:0;font-size:1.25rem;letter-spacing:.02em;color:var(--vino)}
+  header p{margin:2px 0 0;color:var(--tenue);font-size:.9rem;font-family:-apple-system,system-ui,sans-serif}
+  main{flex:1;overflow:auto;padding:8px 20px 140px}
+  section{display:none} section.activa{display:block}
+  .sans{font-family:-apple-system,system-ui,sans-serif}
+  /* --- Grabar --- */
+  .estacion{display:flex;flex-direction:column;align-items:center;gap:22px;padding-top:4vh;text-align:center}
+  #boton{width:min(72vw,320px);aspect-ratio:1;border-radius:50%;border:none;cursor:pointer;
+    background:radial-gradient(circle at 35% 30%,#d9674e,var(--terracota) 55%,#9d3a27);
+    color:#fff;box-shadow:0 14px 40px rgba(200,85,61,.45),inset 0 -8px 18px rgba(0,0,0,.18);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    font:600 1.3rem/1.2 -apple-system,system-ui,sans-serif;transition:transform .15s;padding:0 16%;text-align:center}
+  #boton:active{transform:scale(.97)}
+  #boton svg{width:34%;height:auto}
+  #boton.grabando{background:radial-gradient(circle at 35% 30%,#4f8f6f,var(--verde) 55%,#1f4a36);
+    box-shadow:0 14px 40px rgba(47,107,79,.45);animation:latir 1.6s ease-in-out infinite}
+  @keyframes latir{50%{box-shadow:0 14px 60px rgba(47,107,79,.75)}}
+  #reloj{font:600 2.2rem -apple-system,system-ui,sans-serif;color:var(--vino);min-height:2.6rem}
+  #indicacion{font-size:1.15rem;max-width:22ch;line-height:1.4}
+  .aviso{background:#fff;border-radius:var(--radio);padding:14px 18px;box-shadow:var(--sombra);
+    font:1rem -apple-system,system-ui,sans-serif;color:var(--tenue);max-width:28rem}
+  /* --- Tarjetas --- */
+  .tarjeta{background:#fff;border-radius:var(--radio);padding:20px;margin:0 0 18px;box-shadow:var(--sombra)}
+  .tarjeta h3{margin:0 0 8px;font-size:1.05rem;color:var(--vino)}
+  .tarjeta p{margin:0 0 12px;line-height:1.5}
+  .cambio{display:grid;gap:8px;margin:10px 0 14px}
+  .cambio div{padding:10px 12px;border-radius:12px;font-size:1rem;line-height:1.45}
+  .antes{background:#F7E3DE;text-decoration:line-through;text-decoration-color:rgba(122,46,31,.5)}
+  .despues{background:#E1EFE6}
+  .botones{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .btn{border:none;border-radius:16px;padding:16px 10px;font:600 1.05rem -apple-system,system-ui,sans-serif;cursor:pointer}
+  .si{background:var(--verde);color:#fff} .no{background:var(--papel2);color:var(--tinta)}
+  .sec{background:transparent;color:var(--vino);border:2px solid var(--papel2)}
+  /* --- Avance --- */
+  .cifras{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+  .cifra{background:#fff;border-radius:18px;padding:14px 8px;text-align:center;box-shadow:var(--sombra)}
+  .cifra b{display:block;font:700 1.6rem -apple-system,system-ui,sans-serif;color:var(--vino)}
+  .cifra span{font:.8rem -apple-system,system-ui,sans-serif;color:var(--tenue)}
+  .nota{display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--sombra)}
+  .nota .punto{width:14px;height:14px;border-radius:50%;flex:none;background:var(--ambar)}
+  .nota .punto.listo{background:var(--verde)} .nota .punto.espera{background:var(--terracota)}
+  .nota div{font:1rem -apple-system,system-ui,sans-serif} .nota small{display:block;color:var(--tenue);font-size:.85rem}
+  .pasos{display:flex;gap:4px;margin-top:6px} .pasos i{height:6px;flex:1;border-radius:3px;background:var(--papel2)}
+  .pasos i.on{background:var(--verde)}
+  /* --- Navegación --- */
+  nav{position:fixed;left:0;right:0;bottom:0;background:rgba(246,241,231,.96);backdrop-filter:blur(8px);
+    border-top:1px solid var(--papel2);display:grid;grid-template-columns:repeat(4,1fr);
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
+  nav button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:4px;
+    font:600 .78rem -apple-system,system-ui,sans-serif;color:var(--tenue);padding:6px 0;position:relative;cursor:pointer}
+  nav button svg{width:30px;height:30px}
+  nav button.activa{color:var(--vino)}
+  .insignia{position:absolute;top:0;right:22%;background:var(--terracota);color:#fff;border-radius:12px;
+    min-width:24px;height:24px;font-size:.8rem;display:none;align-items:center;justify-content:center;padding:0 6px}
+  /* --- Acceso --- */
+  #acceso{position:fixed;inset:0;background:var(--papel);display:none;flex-direction:column;justify-content:center;padding:28px;gap:14px;z-index:5}
+  #acceso input{font:1.05rem -apple-system,system-ui,sans-serif;padding:16px;border-radius:14px;border:2px solid var(--papel2);background:#fff}
+  .libro-vacio{text-align:center;padding:30px 10px;color:var(--tenue)}
+  .libro-vacio .portada{width:160px;height:230px;margin:0 auto 18px;border-radius:6px 14px 14px 6px;
+    background:linear-gradient(90deg,#5c2116 0 10px,var(--vino) 10px);box-shadow:var(--sombra);
+    display:flex;align-items:center;justify-content:center;color:#F6F1E7;font-size:1.1rem;padding:16px;text-align:center}
+  @media (prefers-reduced-motion:reduce){#boton.grabando{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Notas de Vida</h1>
+  <p id="estadoRed">Comprobando conexión…</p>
+</header>
+
+<main>
+  <!-- GRABAR -->
+  <section id="v-grabar" class="activa" aria-label="Grabar">
+    <div class="estacion">
+      <div id="reloj" aria-live="polite"></div>
+      <button id="boton" aria-label="Tocar para grabar una nota">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+        <span id="botonTexto">Tocar para grabar</span>
+      </button>
+      <div id="indicacion">Cuando quiera, toque el botón y cuénteme un recuerdo.</div>
+      <div id="cola" class="aviso" hidden></div>
+    </div>
+  </section>
+
+  <!-- PROPUESTAS -->
+  <section id="v-propuestas" aria-label="Propuestas">
+    <div id="listaPropuestas"></div>
+  </section>
+
+  <!-- AVANCE -->
+  <section id="v-avance" aria-label="Avance">
+    <div class="cifras">
+      <div class="cifra"><b id="cNotas">0</b><span>notas</span></div>
+      <div class="cifra"><b id="cCapitulos">0</b><span>capítulos</span></div>
+      <div class="cifra"><b id="cPendientes">0</b><span>por revisar</span></div>
+    </div>
+    <div id="listaNotas"></div>
+  </section>
+
+  <!-- MI LIBRO -->
+  <section id="v-libro" aria-label="Mi libro">
+    <div class="libro-vacio">
+      <div class="portada">Su libro</div>
+      <p class="sans">Aquí podrá hojear su libro y escucharlo con su propia voz. Se irá formando con cada nota que grabe.</p>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button data-v="grabar" class="activa" aria-label="Grabar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>Grabar</button>
+  <button data-v="propuestas" aria-label="Propuestas"><span class="insignia" id="insignia"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H8l-4 4z"/></svg>Propuestas</button>
+  <button data-v="avance" aria-label="Avance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Avance</button>
+  <button data-v="libro" aria-label="Mi libro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5c3-1.5 6-1.5 8 .5 2-2 5-2 8-.5v14c-3-1.5-6-1.5-8 .5-2-2-5-2-8-.5z"/><path d="M12 5.5v14"/></svg>Mi libro</button>
+</nav>
+
+<div id="acceso" role="dialog" aria-label="Acceso">
+  <h2 style="color:var(--vino);margin:0">Configurar este teléfono</h2>
+  <p class="sans" style="color:var(--tenue);margin:0">Solo se hace una vez. Lo realiza el editor.</p>
+  <input id="correo" type="email" autocomplete="username" placeholder="Correo">
+  <input id="clave" type="password" autocomplete="current-password" placeholder="Contraseña">
+  <button class="btn si" id="entrar">Entrar</button>
+  <p id="accesoMsg" class="sans" style="color:var(--terracota)"></p>
+</div>
+
+<script type="module">
+const CFG = window.LV_CONFIG || {};
+const DEMO = !CFG.SUPABASE_URL || CFG.SUPABASE_URL.includes("PENDIENTE");
+let sb = null, usuario = null;
+if (!DEMO) {
+  try {
+    const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+    sb = createClient(CFG.SUPABASE_URL, CFG.SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+  } catch (e) { console.warn("Sin librería de Supabase (sin conexión)", e); }
+}
+
+/* ---------- Voz: la app habla para confirmar ---------- */
+function decir(texto) {
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(texto);
+    u.lang = "es-MX"; u.rate = 0.9;
+    const v = speechSynthesis.getVoices().find(v => v.lang.startsWith("es-MX")) || speechSynthesis.getVoices().find(v => v.lang.startsWith("es"));
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch {}
+}
+
+/* ---------- Cola sin conexión (IndexedDB) ---------- */
+const db = await new Promise((ok, mal) => {
+  const r = indexedDB.open("lv-estacion", 1);
+  r.onupgradeneeded = () => r.result.createObjectStore("cola", { keyPath: "id" });
+  r.onsuccess = () => ok(r.result); r.onerror = () => mal(r.error);
+});
+const tx = (modo) => db.transaction("cola", modo).objectStore("cola");
+const colaTodas = () => new Promise(ok => { const r = tx("readonly").getAll(); r.onsuccess = () => ok(r.result); });
+const colaGuardar = (x) => new Promise(ok => { const r = tx("readwrite").put(x); r.onsuccess = ok; });
+const colaBorrar = (id) => new Promise(ok => { const r = tx("readwrite").delete(id); r.onsuccess = ok; });
+
+async function sha256(blob) {
+  const h = await crypto.subtle.digest("SHA-256", await blob.arrayBuffer());
+  return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+function nuevoId(d = new Date()) {
+  const p = n => String(n).padStart(2, "0");
+  return `LV-N-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
+/* ---------- Grabación ---------- */
+const boton = document.getElementById("boton"), botonTexto = document.getElementById("botonTexto");
+const reloj = document.getElementById("reloj"), indicacion = document.getElementById("indicacion");
+let grabadora = null, trozos = [], inicio = 0, tic = null, corriente = null;
+
+function tipoAudio() {
+  for (const t of ["audio/mp4", "audio/aac", "audio/webm;codecs=opus", "audio/webm"])
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported(t)) return t;
+  return "";
+}
+async function empezar() {
+  try {
+    corriente = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+  } catch {
+    indicacion.textContent = "Necesito permiso para usar el micrófono. Pídale ayuda a Julio.";
+    decir(indicacion.textContent); return;
+  }
+  const tipo = tipoAudio();
+  grabadora = new MediaRecorder(corriente, tipo ? { mimeType: tipo } : undefined);
+  trozos = [];
+  grabadora.ondataavailable = e => e.data.size && trozos.push(e.data);
+  grabadora.onstop = terminar;
+  grabadora.start(1000);
+  inicio = Date.now();
+  boton.classList.add("grabando"); botonTexto.textContent = "Tocar para terminar";
+  boton.setAttribute("aria-label", "Grabando. Tocar para terminar");
+  indicacion.textContent = "La escucho. Cuente con calma.";
+  tic = setInterval(() => {
+    const s = Math.floor((Date.now() - inicio) / 1000);
+    reloj.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+    if (s >= (CFG.MAX_MINUTOS || 20) * 60) detener();
+  }, 500);
+  if (navigator.wakeLock) try { await navigator.wakeLock.request("screen"); } catch {}
+}
+function detener() { if (grabadora && grabadora.state !== "inactive") grabadora.stop(); }
+async function terminar() {
+  clearInterval(tic); corriente.getTracks().forEach(t => t.stop());
+  boton.classList.remove("grabando"); botonTexto.textContent = "Tocar para grabar";
+  boton.setAttribute("aria-label", "Tocar para grabar una nota");
+  const dur = Math.round((Date.now() - inicio) / 1000);
+  reloj.textContent = "";
+  if (dur < 3) { indicacion.textContent = "Fue muy cortita. Cuando guste, intentemos otra vez."; decir(indicacion.textContent); return; }
+  const tipo = grabadora.mimeType || "audio/mp4";
+  const blob = new Blob(trozos, { type: tipo });
+  const ext = tipo.includes("webm") ? "webm" : "m4a";
+  const id = nuevoId(new Date(inicio));
+  await colaGuardar({ id, ext, tipo, blob, duracion: dur, grabada_en: new Date(inicio).toISOString(), hash: await sha256(blob) });
+  indicacion.textContent = "Listo. Su nota quedó guardada en el teléfono.";
+  decir("Listo. Su nota quedó guardada.");
+  pintarCola(); sincronizar();
+}
+boton.addEventListener("click", () => grabadora && grabadora.state === "recording" ? detener() : empezar());
+
+/* ---------- Sincronización con la nube ---------- */
+let sincronizando = false;
+async function sincronizar() {
+  if (sincronizando || !navigator.onLine || !sb || !usuario) return pintarCola();
+  sincronizando = true;
+  try {
+    for (const n of await colaTodas()) {
+      const ruta = `${n.id}.${n.ext}`;
+      const up = await sb.storage.from("lv_notas_entrantes").upload(ruta, n.blob, { contentType: n.tipo, upsert: false });
+      if (up.error && !String(up.error.message).toLowerCase().includes("exists")) throw up.error;
+      const ins = await sb.from("lv_notas").insert({ id: n.id, autor_id: usuario.id, grabada_en: n.grabada_en,
+        duracion_seg: n.duracion, ruta_audio: ruta, hash_sha256: n.hash });
+      if (ins.error && ins.error.code !== "23505") throw ins.error;   // 23505 = ya registrada
+      await colaBorrar(n.id);
+    }
+  } catch (e) { console.warn("Se reintentará", e); }
+  sincronizando = false; pintarCola(); cargarAvance();
+}
+async function pintarCola() {
+  const n = (await colaTodas()).length, el = document.getElementById("cola");
+  el.hidden = n === 0;
+  el.textContent = n === 1 ? "1 nota guardada en el teléfono; se enviará sola cuando haya internet."
+                           : `${n} notas guardadas en el teléfono; se enviarán solas cuando haya internet.`;
+}
+function estadoRed() {
+  document.getElementById("estadoRed").textContent = DEMO ? "Modo de prueba (sin nube configurada)"
+    : navigator.onLine ? "Conectada" : "Sin internet: puede grabar igual";
+}
+addEventListener("online", () => { estadoRed(); sincronizar(); });
+addEventListener("offline", estadoRed);
+setInterval(sincronizar, 60000);
+
+/* ---------- Avance en tiempo real ---------- */
+const ETAPAS = ["recibida","transcrita","organizada","corregida","esperando_aprobacion","en_libro"];
+const TEXTO = { recibida:"Recibida", transcrita:"Escrita", organizada:"Acomodada", corregida:"Revisada",
+  esperando_aprobacion:"Espera su visto bueno", en_libro:"Ya está en su libro", en_espera:"En espera",
+  vacia:"Sin sonido", duplicada:"Repetida", error:"La estamos revisando" };
+async function cargarAvance() {
+  if (!sb || !usuario) return;
+  const { data: notas } = await sb.from("lv_notas").select("id,grabada_en,estado,duracion_seg").order("grabada_en", { ascending: false }).limit(50);
+  const { count: caps } = await sb.from("lv_capitulos").select("id", { count: "exact", head: true });
+  const { data: props } = await sb.from("lv_propuestas").select("*").eq("estado", "pendiente").order("prioridad").limit(5);
+  document.getElementById("cNotas").textContent = notas?.length ?? 0;
+  document.getElementById("cCapitulos").textContent = caps ?? 0;
+  document.getElementById("cPendientes").textContent = props?.length ?? 0;
+  const ins = document.getElementById("insignia");
+  ins.style.display = props?.length ? "flex" : "none"; ins.textContent = props?.length || "";
+  document.getElementById("listaNotas").innerHTML = (notas || []).map(n => {
+    const i = ETAPAS.indexOf(n.estado), f = new Date(n.grabada_en);
+    const clase = n.estado === "en_libro" ? "listo" : n.estado === "esperando_aprobacion" ? "espera" : "";
+    return `<div class="nota"><span class="punto ${clase}"></span><div>${TEXTO[n.estado] || n.estado}
+      <small>${f.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"long"})} · ${Math.round((n.duracion_seg||0)/60)||1} min</small>
+      <div class="pasos">${ETAPAS.map((_, k) => `<i class="${k <= i ? "on" : ""}"></i>`).join("")}</div></div></div>`;
+  }).join("") || `<p class="sans" style="color:var(--tenue)">Aún no hay notas. ¡La primera la espera!</p>`;
+  pintarPropuestas(props || []);
+}
+
+/* ---------- Propuestas ---------- */
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+function pintarPropuestas(props) {
+  const cont = document.getElementById("listaPropuestas");
+  if (!props.length) { cont.innerHTML = `<div class="libro-vacio sans">Por ahora no hay nada que revisar. Siga grabando cuando guste.</div>`; return; }
+  cont.innerHTML = props.map(p => {
+    const t = p.tarjeta || {};
+    const botones = (t.botones || [{etiqueta:"Sí",accion:"aprobar"},{etiqueta:"No",accion:"rechazar"},{etiqueta:"Escuchar otra vez",accion:"repetir"},{etiqueta:"Explícame",accion:"explicar"}]);
+    return `<div class="tarjeta" data-id="${esc(p.id)}">
+      <p>${esc(t.texto_en_pantalla || t.texto_para_leer)}</p>
+      ${t.antes ? `<div class="cambio"><div class="antes">${esc(t.antes)}</div><div class="despues">${esc(t.despues)}</div></div>` : ""}
+      <div class="botones">${botones.map(b => `<button class="btn ${b.accion==="aprobar"||b.accion==="elegir_opcion"?"si":b.accion==="rechazar"?"no":"sec"}"
+        data-accion="${esc(b.accion)}" data-valor="${esc(b.valor||"")}">${esc(b.etiqueta)}</button>`).join("")}</div></div>`;
+  }).join("");
+  cont.querySelectorAll(".tarjeta").forEach(el => {
+    const p = props.find(x => x.id === el.dataset.id), t = p.tarjeta || {};
+    el.querySelectorAll("button").forEach(b => b.onclick = async () => {
+      const a = b.dataset.accion;
+      if (a === "repetir") return decir(t.texto_para_leer || t.texto_en_pantalla);
+      if (a === "explicar") return decir(t.explicacion_ampliada || "Es una pequeña mejora para que su texto se lea mejor.");
+      const estado = a === "rechazar" ? "rechazada" : a === "posponer" ? "pospuesta" : "aprobada";
+      await sb.from("lv_propuestas").update({ estado, respuesta: { accion: a, valor: b.dataset.valor }, respondida_en: new Date().toISOString() }).eq("id", p.id);
+      decir(estado === "aprobada" ? "Muy bien, queda así." : estado === "rechazada" ? "De acuerdo, lo dejamos como usted lo dijo." : "Lo vemos después.");
+      cargarAvance();
+    });
+  });
+}
+
+/* ---------- Navegación ---------- */
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("activa", x === b));
+  document.querySelectorAll("main section").forEach(s => s.classList.toggle("activa", s.id === "v-" + b.dataset.v));
+  if (b.dataset.v === "propuestas") { const t = document.querySelector("#listaPropuestas .tarjeta p"); if (t) decir(t.textContent); }
+});
+
+/* ---------- Acceso (una sola vez, lo hace el editor) ---------- */
+async function iniciar() {
+  estadoRed(); pintarCola();
+  if (DEMO || !sb) return;
+  const { data } = await sb.auth.getSession();
+  usuario = data.session?.user || null;
+  if (!usuario) { document.getElementById("acceso").style.display = "flex"; return; }
+  sb.channel("lv-cambios")
+    .on("postgres_changes", { event: "*", schema: "public", table: "lv_notas" }, cargarAvance)
+    .on("postgres_changes", { event: "*", schema: "public", table: "lv_propuestas" }, cargarAvance)
+    .on("postgres_changes", { event: "*", schema: "public", table: "lv_capitulos" }, cargarAvance)
+    .subscribe();
+  cargarAvance(); sincronizar();
+}
+document.getElementById("entrar").onclick = async () => {
+  const { data, error } = await sb.auth.signInWithPassword({
+    email: document.getElementById("correo").value.trim(), password: document.getElementById("clave").value });
+  if (error) { document.getElementById("accesoMsg").textContent = "No se pudo entrar. Revise el correo y la contraseña."; return; }
+  usuario = data.user; document.getElementById("acceso").style.display = "none"; iniciar();
+};
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+iniciar();
+</script>
+</body>
+</html>
