@@ -1,5 +1,5 @@
 // Service worker: la app abre y graba aunque no haya internet.
-const CACHE = "lv-estacion-v4";
+const CACHE = "lv-estacion-v5";
 const ARCHIVOS = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icono.svg",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"];
 
@@ -15,7 +15,7 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET" || url.hostname.endsWith("supabase.co")) return; // datos: siempre en vivo
   // Primero la red (para recibir actualizaciones); si no hay internet, la copia guardada.
   e.respondWith(
-    fetch(e.request).then((resp) => {
+    (url.origin === self.location.origin ? fetch(e.request.url, { cache: "no-store" }) : fetch(e.request)).then((resp) => {
       if (resp.ok) { const copia = resp.clone(); caches.open(CACHE).then((c) => c.put(e.request, copia)); }
       return resp;
     }).catch(() => caches.match(e.request, { ignoreSearch: true }).then((r) => r || caches.match("./index.html")))
