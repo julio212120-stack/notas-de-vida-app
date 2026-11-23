@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mi libro · Notas de Vida</title>
+<title>Vivencias Reales</title>
 <meta name="theme-color" content="#E9DCC6">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icono.svg">
@@ -248,7 +248,7 @@ async function cargarLibro() {
     capitulos = [{ titulo: "Primeros recuerdos", notas: notas.map((n) => ({ texto: texto(n), audio: n.ruta_escucha })) }];
   }
   return {
-    titulo: portada.titulo || "Notas de Vida",
+    titulo: portada.titulo || "Vivencias Reales",
     subtitulo: portada.subtitulo || "Memorias",
     autora: portada.autora || "Julieta Hernández",
     iniciales: portada.iniciales || "JH",
@@ -259,7 +259,7 @@ async function cargarLibro() {
 function libroMuestra(subtitulo) {
   const p = (t) => ({ texto: t, audio: null });
   return {
-    titulo: "Notas de Vida", subtitulo: subtitulo || "Libro de muestra", autora: "Julieta Hernández", iniciales: "JH",
+    titulo: "Vivencias Reales", subtitulo: subtitulo || "Libro de muestra", autora: "Julieta Hernández", iniciales: "JH",
     capitulos: [
       { titulo: "Cómo se leerá este libro", notas: [p(
 `Este es un texto de muestra. Sirve solo para ver cómo se acomodan las letras, los márgenes y el paso de las hojas; no es parte de las memorias.
