@@ -1,5 +1,5 @@
 // Service worker: la app abre y graba aunque no haya internet.
-const CACHE = "lv-estacion-v8";
+const CACHE = "lv-estacion-v9";
 const ARCHIVOS = ["./", "./index.html", "./libro.html", "./config.js", "./manifest.webmanifest", "./icono.svg",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"];
 
